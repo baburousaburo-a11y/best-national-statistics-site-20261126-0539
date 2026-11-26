@@ -1,260 +1,377 @@
-// The pages of the site. Each route renders into #view from the
-// figures in data.js and the SVG builders in charts.js; every link in
-// the header is a hash route, and every control on a page re-renders
-// that page with new state — nothing on a page is decorative.
+// HTML for each page of Indonesia in Numbers, built from the data. Every value
+// shown is escaped before it goes into the page. Charts come from charts.js.
 
 import {
-  COUNTRY, INDICATORS, POPULATION_SERIES, GDP_SERIES, GROWTH_SERIES,
-  INFLATION_SERIES, SECTOR_SPLIT, TOP_INDUSTRIES, ISLAND_GDP,
-  PROVINCES, EXPENDITURE, SOURCES,
+  YEARS, POPULATION, GDP_USD, GDP_PC, GROWTH, INFLATION, UNEMPLOYMENT, POVERTY,
+  AGE_2024, SECTORS_2024, PROVINCES, ISLANDS, WAGES_2025, SOURCES,
 } from './data.js';
-import { lineChart, barChart, hbarChart, donutChart } from './charts.js';
+import { barChart, lineChart } from './charts.js';
 
-const state = {
-  popYear: 2025,
-  econMode: 'bars',
-  regionIsland: 'All',
-  regionQuery: '',
-  regionSort: 'pop',
+const escape = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+const yearIndex = (year) => YEARS.indexOf(year);
+
+function fmt(n, decimals = 1) {
+  return Number(n).toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function money(n) {
+  return Number(n).toLocaleString('en-US');
+}
+
+function yearOptions(selected) {
+  return YEARS.map((y) => `<option value="${y}"${y === selected ? ' selected' : ''}>${y}</option>`).join('');
+}
+
+function chartToggle(state) {
+  const bars = state.chart === 'bars';
+  return `<span class="toggle" role="group" aria-label="Chart type">
+    <button type="button" data-chart="bars" aria-pressed="${bars}">Bars</button>
+    <button type="button" data-chart="line" aria-pressed="${!bars}">Line</button>
+  </span>`;
+}
+
+function yearPicker(state) {
+  return `<label>Year
+    <select class="year-pick" aria-label="Year">${yearOptions(state.year)}</select>
+  </label>`;
+}
+
+function kpi(label, value, unit, sub) {
+  return `<div class="kpi"><div class="label">${escape(label)}</div>
+    <div class="value">${value} <span class="unit">${escape(unit)}</span></div>
+    <div class="sub">${escape(sub)}</div></div>`;
+}
+
+function chartFor(state, labels, values, opts) {
+  return state.chart === 'bars'
+    ? barChart(labels, values, { ...opts, highlight: yearIndex(state.year) })
+    : lineChart(labels, values, { ...opts, highlight: yearIndex(state.year) });
+}
+
+function glanceRow(label, series, year, decimals, unit, invert = false) {
+  const i = yearIndex(year);
+  const first = series[0];
+  const mid = series[yearIndex(2020)];
+  const now = series[i];
+  const change = now - first;
+  const arrow = change > 0 ? '▲' : change < 0 ? '▼' : '—';
+  return `<tr><td>${escape(label)}</td><td class="num">${fmt(first, decimals)}${unit}</td>
+    <td class="num">${fmt(mid, decimals)}${unit}</td><td class="num">${fmt(now, decimals)}${unit}</td>
+    <td class="num">${arrow} ${fmt(Math.abs(change), decimals)}${unit}</td></tr>`;
+}
+
+export function overviewPage(state) {
+  const i = yearIndex(state.year);
+  const years = YEARS.map(String);
+  return `<h1>Indonesia in Numbers</h1>
+<p class="lede">One place for the figures that describe Indonesia: how many people live here,
+how the economy is doing, where people live and what things cost. Pick a year and the
+whole page follows it.</p>
+<div class="controls">${yearPicker(state)}${chartToggle(state)}</div>
+<div class="kpis">
+  ${kpi('Population', fmt(POPULATION[i]), 'million', `BPS, ${state.year}`)}
+  ${kpi('GDP', '$' + money(GDP_USD[i]), 'billion', `World Bank, ${state.year}`)}
+  ${kpi('GDP growth', fmt(GROWTH[i], 2), '%', `BPS, ${state.year}`)}
+  ${kpi('Inflation', fmt(INFLATION[i], 2), '%', `BPS, ${state.year}`)}
+  ${kpi('Unemployment', fmt(UNEMPLOYMENT[i], 2), '%', `BPS, August ${state.year}`)}
+  ${kpi('Poverty rate', fmt(POVERTY[i], 2), '%', `BPS, ${state.year}`)}
+</div>
+<div class="card">
+  <h2>Population, 2015–2025</h2>
+  <div class="chart">${chartFor(state, years, POPULATION, { decimals: 1, unit: 'm' })}</div>
+  <p class="src">Population in millions. BPS mid-year estimates; 2025 is a projection. The red bar is ${state.year}.</p>
+</div>
+<div class="highlights">
+  <div class="highlight"><b>${fmt(POPULATION[i])} million</b><span>people lived in Indonesia in ${state.year} (BPS)</span></div>
+  <div class="highlight"><b>${fmt(POVERTY[i], 2)}%</b><span>lived below the poverty line in ${state.year} (BPS)</span></div>
+  <div class="highlight"><b>${fmt(GROWTH[i], 2)}%</b><span>real GDP growth in ${state.year} (BPS)</span></div>
+</div>
+<div class="card">
+  <h2>At a glance — ${state.year} against 2015</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Indicator</th><th class="num">2015</th><th class="num">2020</th><th class="num">${state.year}</th><th class="num">Change since 2015</th></tr></thead>
+    <tbody>
+      ${glanceRow('Population (million)', POPULATION, state.year, 1, '')}
+      ${glanceRow('GDP (US$ billion)', GDP_USD, state.year, 0, '')}
+      ${glanceRow('GDP per capita (US$)', GDP_PC, state.year, 0, '')}
+      ${glanceRow('GDP growth (%)', GROWTH, state.year, 2, '')}
+      ${glanceRow('Inflation (%)', INFLATION, state.year, 2, '', true)}
+      ${glanceRow('Unemployment (%)', UNEMPLOYMENT, state.year, 2, '', true)}
+      ${glanceRow('Poverty rate (%)', POVERTY, state.year, 2, '', true)}
+    </tbody>
+  </table></div>
+  <p class="src">Sources: BPS for population, growth, inflation, unemployment and poverty; World Bank for GDP. 2025 values are estimates.</p>
+</div>
+<div class="pages">
+  <a href="#/people"><b>People</b><span>Population by year and age structure.</span></a>
+  <a href="#/economy"><b>Economy</b><span>GDP, growth and the biggest sectors.</span></a>
+  <a href="#/regions"><b>Regions</b><span>Provinces, islands and poverty by place.</span></a>
+  <a href="#/prices"><b>Prices &amp; work</b><span>Inflation, jobs and minimum wages.</span></a>
+  <a href="#/sources"><b>Sources</b><span>Where every figure comes from.</span></a>
+</div>`;
+}
+
+export function peopleRowsHTML(state) {
+  const rows = YEARS.map((y, i) => {
+    const change = i === 0 ? null : POPULATION[i] - POPULATION[i - 1];
+    return { year: y, pop: POPULATION[i], change };
+  });
+  const key = state.peopleSort;
+  const dir = state.peopleDir;
+  rows.sort((a, b) => {
+    const av = a[key] === null ? -Infinity : a[key];
+    const bv = b[key] === null ? -Infinity : b[key];
+    return (av - bv) * dir;
+  });
+  return rows
+    .map(
+      (r) => `<tr><td>${r.year}</td><td class="num">${fmt(r.pop, 1)}</td>
+      <td class="num">${r.change === null ? '—' : `+${fmt(r.change, 1)}`}</td></tr>`,
+    )
+    .join('');
+}
+
+function sortMark(state, column, sortKey, dirKey) {
+  if (state[sortKey] !== column) return '';
+  return state[dirKey] === 1 ? ' ▲' : ' ▼';
+}
+
+export function peoplePage(state) {
+  const years = YEARS.map(String);
+  return `<h1>People</h1>
+<p class="lede">Indonesia is the world&rsquo;s fourth most populous country. The population grew
+by about 29 million between 2015 and 2025, and more than two in three Indonesians are
+of working age.</p>
+<div class="card">
+  <h2>Population, 2015–2025</h2>
+  <div class="chart">${lineChart(years, POPULATION, { decimals: 1, unit: 'm', highlight: yearIndex(state.year) })}</div>
+  <p class="src">Population in millions. BPS mid-year estimates; 2025 is a projection.</p>
+</div>
+<div class="card">
+  <h2>Age structure, 2024</h2>
+  ${AGE_2024.map(
+    (a) => `<div class="meter"><span class="name">${escape(a.group)}</span>
+      <span class="track"><span class="fill" style="width:${a.share}%"></span></span>
+      <span class="val">${fmt(a.share, 1)}%</span></div>`,
+  ).join('')}
+  <p class="src">Median age 30.5 years (BPS, 2024). A young population: roughly a quarter are under 15.</p>
+</div>
+<div class="card">
+  <h2>Population by year</h2>
+  <p class="small">Click a column heading to sort.</p>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th class="sortable" data-sort="year">Year${sortMark(state, 'year', 'peopleSort', 'peopleDir')}</th>
+      <th class="num sortable" data-sort="pop">Population (million)${sortMark(state, 'pop', 'peopleSort', 'peopleDir')}</th>
+      <th class="num sortable" data-sort="change">Annual change (million)${sortMark(state, 'change', 'peopleSort', 'peopleDir')}</th>
+    </tr></thead>
+    <tbody id="people-rows">${peopleRowsHTML(state)}</tbody>
+  </table></div>
+  <p class="src">Source: BPS. 2020 is anchored on the population census; 2025 is a projection.</p>
+</div>`;
+}
+
+export function economyPage(state) {
+  const i = yearIndex(state.year);
+  const years = YEARS.map(String);
+  return `<h1>Economy</h1>
+<p class="lede">Indonesia is the largest economy in Southeast Asia and the world&rsquo;s
+16th largest by nominal GDP. Growth has run at about 5% a year, with one sharp
+pandemic contraction in 2020.</p>
+<div class="controls">${yearPicker(state)}${chartToggle(state)}</div>
+<div class="kpis">
+  ${kpi('GDP', '$' + money(GDP_USD[i]), 'billion', `World Bank, ${state.year}`)}
+  ${kpi('GDP per capita', '$' + money(GDP_PC[i]), '', `World Bank, ${state.year}`)}
+  ${kpi('GDP growth', fmt(GROWTH[i], 2), '%', `BPS, ${state.year}`)}
+</div>
+<div class="card">
+  <h2>Nominal GDP, 2015–2025 (US$ billion)</h2>
+  <div class="chart">${chartFor(state, years, GDP_USD, { decimals: 0, unit: '' })}</div>
+  <p class="src">World Bank, current US dollars. 2025 is an IMF estimate. The red bar is ${state.year}.</p>
+</div>
+<div class="card">
+  <h2>Real GDP growth, 2015–2025 (%)</h2>
+  <div class="chart">${lineChart(years, GROWTH, { decimals: 2, unit: '%', highlight: i })}</div>
+  <p class="src">BPS, year on year. The economy shrank 2.07% in 2020, then grew 5.31% in 2022.</p>
+</div>
+<div class="card">
+  <h2>What the economy is made of, 2024</h2>
+  ${SECTORS_2024.map(
+    (s) => `<div class="meter"><span class="name">${escape(s.name)}</span>
+      <span class="track"><span class="fill" style="width:${s.share}%"></span></span>
+      <span class="val">${fmt(s.share, 1)}%</span></div>`,
+  ).join('')}
+  <p class="src">Share of GDP by sector (BPS, 2024). Manufacturing is the single largest sector.</p>
+</div>
+<div class="card">
+  <h2>GDP and GDP per capita by year</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Year</th><th class="num">GDP (US$ bn)</th><th class="num">GDP per capita (US$)</th><th class="num">Growth (%)</th></tr></thead>
+    <tbody>
+      ${YEARS.map((y, j) => `<tr><td>${y}</td><td class="num">${money(GDP_USD[j])}</td>
+        <td class="num">${money(GDP_PC[j])}</td><td class="num">${fmt(GROWTH[j], 2)}</td></tr>`).join('')}
+    </tbody>
+  </table></div>
+  <p class="src">Sources: World Bank (GDP, GDP per capita), BPS (growth). 2025 GDP is an IMF estimate.</p>
+</div>`;
+}
+
+export function filteredProvinces(state) {
+  const q = state.query.trim().toLowerCase();
+  let list = PROVINCES.filter((p) => (state.island === 'All' ? true : p.island === state.island));
+  if (q) list = list.filter((p) => p.name.toLowerCase().includes(q));
+  const key = state.provSort;
+  const dir = state.provDir;
+  return [...list].sort((a, b) => {
+    if (key === 'name' || key === 'island') return a[key].localeCompare(b[key]) * dir;
+    return (a[key] - b[key]) * dir;
+  });
+}
+
+const SHORT = {
+  'Jawa Barat': 'Jabar', 'Jawa Timur': 'Jatim', 'Jawa Tengah': 'Jateng',
+  'Sumatera Utara': 'Sumut', 'Sulawesi Selatan': 'Sulsel', 'Sumatera Selatan': 'Sumsel',
+  'Sumatera Barat': 'Sumbar', 'Kalimantan Barat': 'Kalbar', 'Nusa Tenggara Barat': 'NTB',
+  'Nusa Tenggara Timur': 'NTT', 'Kalimantan Selatan': 'Kalsel', 'Kalimantan Timur': 'Kaltim',
+  'DI Yogyakarta': 'DIY', 'DKI Jakarta': 'Jakarta',
 };
 
-function kpiCard(ind) {
-  const shown = ind.value >= 1000
-    ? ind.value.toLocaleString('en-US')
-    : String(ind.value);
-  return `<article class="kpi">
-    <p class="kpi-label">${ind.label}</p>
-    <p class="kpi-value">${shown}<span class="kpi-unit"> ${ind.unit}</span></p>
-    <p class="kpi-note">${ind.note}</p>
-    <p class="kpi-src">${ind.source}, ${ind.year}</p>
-  </article>`;
+function shortName(name) {
+  return SHORT[name] || name;
 }
 
-function pageHead(title, intro, source) {
-  return `<header class="page-head"><h1>${title}</h1><p>${intro}</p>`
-    + (source ? `<p class="src-line">Source: ${source}</p>` : '') + '</header>';
+export function regionsChartHTML(state) {
+  const top = filteredProvinces(state).slice(0, 8);
+  if (top.length === 0) return '<p>No provinces match the current filter.</p>';
+  return barChart(
+    top.map((p) => shortName(p.name)),
+    top.map((p) => p.pop),
+    { decimals: 1, unit: 'm' },
+  );
 }
 
-function figureBox(title, chartHtml, caption) {
-  return `<figure class="chart-box"><figcaption><strong>${title}</strong><span>${caption}</span></figcaption>${chartHtml}</figure>`;
+export function provinceRowsHTML(state) {
+  const list = filteredProvinces(state);
+  if (list.length === 0) return '<tr><td colspan="4">No provinces match. Clear the search or pick another island.</td></tr>';
+  return list
+    .map(
+      (p) => `<tr><td>${escape(p.name)}</td><td>${escape(p.island)}</td>
+      <td class="num">${fmt(p.pop, 2)}</td><td class="num">${fmt(p.poverty, 2)}</td></tr>`,
+    )
+    .join('');
 }
 
-function overview() {
-  const cards = INDICATORS.map(kpiCard).join('');
-  const pop = lineChart(POPULATION_SERIES, { unit: 'm' });
-  const donut = donutChart(SECTOR_SPLIT.map((s) => ({ value: s.share, colour: s.colour })), { centre: '100%' });
-  const legend = SECTOR_SPLIT.map((s) => `<li><span class="swatch" style="background:${s.colour}"></span>${s.name} — <strong>${s.share}%</strong></li>`).join('');
-  const growth = barChart(GROWTH_SERIES, { unit: '%' });
-  return pageHead(
-    'Indonesia in numbers',
-    'One country, 285.7 million people, 38 provinces and the world’s 17th-largest economy — the headline figures, the trends behind them, and where to dig deeper.',
-    'World Bank WDI and BPS — Statistics Indonesia, latest values 2024–2025',
-  )
-  + `<section class="kpi-grid" aria-label="Key indicators">${cards}</section>`
-  + `<section class="two-col">
-      ${figureBox('Population, 2015–2025', pop, 'Millions of people. The 2020 census counted 270.2 million; the World Bank series runs a little higher.')}
-      <div class="chart-box"><figcaption><strong>What the economy is made of</strong><span>Share of GDP, 2024</span></figcaption>
-        <div class="donut-wrap">${donut}<ul class="legend">${legend}</ul></div></div>
-    </section>`
-  + figureBox('Real GDP growth, 2015–2025', growth, 'Percent per year. The 2020 pandemic contraction (−2.1%) is the only down year in the decade.')
-  + `<section class="fact-strip">
-      <div><strong>${COUNTRY.provinces}</strong><span>provinces</span></div>
-      <div><strong>${COUNTRY.islands}</strong><span>islands</span></div>
-      <div><strong>55.6%</strong><span>of people live on Java</span></div>
-      <div><strong>57.0%</strong><span>of GDP is made on Java</span></div>
-    </section>`
-  + `<section class="link-cards">
-      <a href="#/population"><strong>People</strong><span>Population growth, age and the provinces where everyone lives.</span></a>
-      <a href="#/economy"><strong>Economy</strong><span>GDP, growth and which industries carry the economy.</span></a>
-      <a href="#/regions"><strong>Regions</strong><span>Compare all 15 largest provinces, filterable by island.</span></a>
-      <a href="#/prices"><strong>Prices &amp; work</strong><span>Inflation, jobs and poverty — what daily life costs.</span></a>
-    </section>`;
-}
-
-function population() {
-  const years = POPULATION_SERIES.map((p) => p.year);
-  const selected = POPULATION_SERIES.find((p) => p.year === state.popYear);
-  const prev = POPULATION_SERIES.find((p) => p.year === state.popYear - 1);
-  const growth = prev ? (((selected.value - prev.value) / prev.value) * 100).toFixed(2) : '—';
-  const buttons = years.map((y) => `<button type="button" data-year="${y}" class="${y === state.popYear ? 'active' : ''}" aria-pressed="${y === state.popYear}">${y}</button>`).join('');
-  const java = PROVINCES.filter((p) => p.island === 'Java').reduce((s, p) => s + p.pop, 0);
-  return pageHead(
-    'People',
-    'Indonesia is the world’s fourth most populous country. Growth has slowed to under 1% a year, and more than half the population lives on one island, Java.',
-    'World Bank WDI (population series); BPS provincial estimates, mid-2024',
-  )
-  + figureBox('Population, 2015–2025', lineChart(POPULATION_SERIES, { unit: 'm', highlightYear: state.popYear }), 'Millions of people. Pick a year below to read it off the chart.')
-  + `<div class="controls" role="group" aria-label="Choose a year">${buttons}</div>`
-  + `<p class="readout">In <strong>${state.popYear}</strong> Indonesia had <strong>${selected.value.toFixed(1)} million</strong> people`
-  + (prev ? ` — up <strong>${growth}%</strong> on ${prev.year} (${prev.value.toFixed(1)} million).` : '.') + '</p>'
-  + `<section class="two-col">
-      <div class="text-card"><h2>Where everyone lives</h2>
-      <p>Java holds <strong>${java.toFixed(1)} million</strong> people — about 55.6% of the country — on 6.6% of its land. The three Javanese provinces of West, Central and East Java alone hold 130 million people, more than Japan.</p>
-      <p>Jakarta, the capital, packs 10.7 million people into 661 km²: 16,165 people per km², one of the densest cities on earth. At the other end, East Kalimantan has 30 people per km².</p>
-      <p><a href="#/regions">Compare the provinces →</a></p></div>
-      <div class="text-card"><h2>A young, slowing population</h2>
-      <p>Life expectancy is <strong>71.3 years</strong> (2024). The median Indonesian is about 30 years old, and the birth rate has fallen to 2.1 children per woman — replacement level.</p>
-      <p>Population growth was 0.8% in 2025, down from about 1.3% a decade earlier. On current trends the population peaks near 320 million in the 2050s.</p>
-      <p>Sources: World Bank WDI; BPS; UN World Population Prospects.</p></div>
-    </section>`;
-}
-
-function economy() {
-  const chart = state.econMode === 'bars'
-    ? barChart(GDP_SERIES, { unit: '' })
-    : lineChart(GDP_SERIES, { unit: '' });
-  const industries = hbarChart(TOP_INDUSTRIES.map((i) => ({ label: i.name, value: i.share })), { unit: '%' });
-  const islands = hbarChart(ISLAND_GDP.map((i) => ({ label: i.name, value: i.share })), { unit: '%' });
-  const spend = EXPENDITURE.map((e) => `<li><span>${e.name}</span><strong>${e.share > 0 ? '+' : ''}${e.share}%</strong></li>`).join('');
-  return pageHead(
-    'Economy',
-    'A US$1.45 trillion economy (2025) that has grown about 5% a year for a decade, powered by household spending and manufacturing — and concentrated on Java.',
-    'World Bank WDI (GDP, growth); BPS (industry shares, expenditure, regional GDP)',
-  )
-  + `<div class="controls" role="group" aria-label="Chart type">
-      <button type="button" data-mode="bars" class="${state.econMode === 'bars' ? 'active' : ''}" aria-pressed="${state.econMode === 'bars'}">Bars</button>
-      <button type="button" data-mode="line" class="${state.econMode === 'line' ? 'active' : ''}" aria-pressed="${state.econMode === 'line'}">Line</button>
-    </div>`
-  + figureBox('Nominal GDP, 2015–2025', chart, 'US$ billion. GDP dipped in 2020 with the pandemic, then rose every year since.')
-  + `<section class="two-col">
-      ${figureBox('Biggest industries, 2023', industries, 'Share of GDP. Manufacturing alone is nearly a fifth of the economy.')}
-      ${figureBox('Where GDP is made, 2024', islands, 'Share of national GDP by island group. Java: 57.0%, Sumatra: 22.1%.')}
-    </section>`
-  + `<section class="two-col">
-      <div class="text-card"><h2>What Indonesians spend on</h2><ul class="spend">${spend}</ul>
-      <p>Household consumption is more than half of GDP — the economy runs on what 285 million people buy. Investment is the second engine at 29.3%.</p></div>
-      <div class="text-card"><h2>Growth, year by year</h2>
-      <p>Real growth: <strong>5.3%</strong> in 2022, <strong>5.1%</strong> in 2023, <strong>5.0%</strong> in 2024, <strong>5.1%</strong> in 2025. The fastest-growing industries in 2024 were other services (+9.8%) and transport &amp; warehousing (+8.7%).</p>
-      <p>GDP per person reached <strong>US$5,060</strong> in 2025 — up from US$4,925 in 2024.</p></div>
-    </section>`;
-}
-
-function regions() {
+export function regionsPage(state) {
   const islands = ['All', ...new Set(PROVINCES.map((p) => p.island))];
-  const chips = islands.map((i) => `<button type="button" data-island="${i}" class="${state.regionIsland === i ? 'active' : ''}" aria-pressed="${state.regionIsland === i}">${i}</button>`).join('');
-  let rows = PROVINCES.filter((p) => (state.regionIsland === 'All' || p.island === state.regionIsland)
-    && p.name.toLowerCase().includes(state.regionQuery.toLowerCase()));
-  const sorts = {
-    pop: (a, b) => b.pop - a.pop,
-    name: (a, b) => a.name.localeCompare(b.name),
-    density: (a, b) => b.density - a.density,
-  };
-  rows = [...rows].sort(sorts[state.regionSort]);
-  const tableRows = rows.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${p.name}</strong></td><td>${p.capital}</td><td>${p.island}</td><td class="num">${p.pop.toFixed(2)}</td><td class="num">${p.density.toLocaleString('en-US')}</td><td class="num">${p.share.toFixed(1)}%</td></tr>`).join('');
-  const top = [...PROVINCES].sort((a, b) => b.pop - a.pop).slice(0, 8);
-  const chart = hbarChart(top.map((p) => ({ label: p.name, value: p.pop })), { unit: 'm', maxValue: 55 });
-  return pageHead(
-    'Regions',
-    'Fifteen largest provinces of 38 — home to most of the country. Filter by island, search by name, or sort the table.',
-    'BPS provincial population estimates, mid-2024',
-  )
-  + figureBox('Largest provinces by population', chart, 'Millions of people, mid-2024. West Java alone has more people than Spain.')
-  + `<div class="controls" role="group" aria-label="Filter by island">${chips}</div>`
-  + `<div class="controls"><label class="search-label">Search province
-      <input type="search" id="region-search" placeholder="e.g. Java, Bali…" value="${state.regionQuery}" aria-label="Search provinces"></label>
-    <label class="search-label">Sort by
-      <select id="region-sort" aria-label="Sort provinces">
-        <option value="pop" ${state.regionSort === 'pop' ? 'selected' : ''}>Population (largest first)</option>
-        <option value="name" ${state.regionSort === 'name' ? 'selected' : ''}>Name (A–Z)</option>
-        <option value="density" ${state.regionSort === 'density' ? 'selected' : ''}>Density (densest first)</option>
-      </select></label></div>`
-  + `<p class="readout">Showing <strong>${rows.length}</strong> of ${PROVINCES.length} provinces listed${state.regionIsland !== 'All' ? ` on ${state.regionIsland}` : ''}${state.regionQuery ? ` matching “${state.regionQuery}”` : ''}.</p>`
-  + `<div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Province</th><th>Capital</th><th>Island</th><th class="num">Population (m)</th><th class="num">Density /km²</th><th class="num">Share</th></tr></thead>
-      <tbody>${tableRows || '<tr><td colspan="7">No province matches that search.</td></tr>'}</tbody>
-    </table></div>
-    <p class="src-line">All 38 provinces: the 23 smaller ones (including the four new Papuan provinces, each under 1 million people) are not listed individually. Population: BPS mid-2024 estimates.</p>`;
+  return `<h1>Regions</h1>
+<p class="lede">More than half of Indonesia&rsquo;s people live on Jawa, an island about the size
+of England. The table below lists the 20 largest provinces — filter by island, search
+by name, or sort any column.</p>
+<div class="controls">
+  <label>Island
+    <select id="island-filter" aria-label="Island">
+      ${islands.map((n) => `<option value="${escape(n)}"${n === state.island ? ' selected' : ''}>${escape(n)}</option>`).join('')}
+    </select>
+  </label>
+  <label>Search
+    <input type="search" id="prov-search" placeholder="Type a province name" value="${escape(state.query)}" aria-label="Search provinces">
+  </label>
+</div>
+<div class="card">
+  <h2>Largest provinces by population, 2024</h2>
+  <div class="chart" id="regions-chart">${regionsChartHTML(state)}</div>
+  <p class="src">Population in millions (BPS, 2024). The chart follows the island filter and search.</p>
+</div>
+<div class="card">
+  <h2>Provinces</h2>
+  <p class="small"><span id="prov-count">${filteredProvinces(state).length}</span> of ${PROVINCES.length} provinces shown. Click a column heading to sort.</p>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th class="sortable" data-sort="name">Province${sortMark(state, 'name', 'provSort', 'provDir')}</th>
+      <th class="sortable" data-sort="island">Island${sortMark(state, 'island', 'provSort', 'provDir')}</th>
+      <th class="num sortable" data-sort="pop">Population 2024 (m)${sortMark(state, 'pop', 'provSort', 'provDir')}</th>
+      <th class="num sortable" data-sort="poverty">Poverty 2024 (%)${sortMark(state, 'poverty', 'provSort', 'provDir')}</th>
+    </tr></thead>
+    <tbody id="prov-rows">${provinceRowsHTML(state)}</tbody>
+  </table></div>
+  <p class="src">Sources: BPS, mid-year population estimates and September 2024 poverty rates.</p>
+</div>
+<div class="card">
+  <h2>Where people live, 2024</h2>
+  ${ISLANDS.map(
+    (g) => `<div class="meter"><span class="name">${escape(g.name)}</span>
+      <span class="track"><span class="fill" style="width:${g.share}%"></span></span>
+      <span class="val">${fmt(g.share, 1)}%</span></div>`,
+  ).join('')}
+  <p class="src">Share of the national population by island group (BPS, 2024). Jawa alone holds 55.7%.</p>
+</div>`;
 }
 
-function prices() {
-  const infl = lineChart(INFLATION_SERIES, { unit: '%', colour: '#b45309' });
-  const growth = barChart(GROWTH_SERIES, { unit: '%', colour: '#0f766e' });
-  return pageHead(
-    'Prices &amp; work',
-    'What daily life costs and who has work: inflation is back near 2%, unemployment is under 5%, and poverty has fallen below 9% — but a quarter of workers are still in informal jobs.',
-    'World Bank WDI (inflation); BPS (labour-force survey Feb 2025; poverty Mar 2025)',
-  )
-  + `<section class="kpi-grid" aria-label="Prices and work indicators">
-      ${kpiCard(INDICATORS.find((i) => i.key === 'inflation'))}
-      ${kpiCard(INDICATORS.find((i) => i.key === 'unemployment'))}
-      ${kpiCard(INDICATORS.find((i) => i.key === 'poverty'))}
-      ${kpiCard(INDICATORS.find((i) => i.key === 'life'))}
-    </section>`
-  + figureBox('Consumer-price inflation, 2015–2025', infl, 'Percent per year. Inflation peaked at 6.4% in 2015 and 4.2% in 2022; it was 1.9% in 2025.')
-  + `<section class="two-col">
-      ${figureBox('Real GDP growth, 2015–2025', growth, 'Percent per year — the growth that has kept jobs and incomes rising.')}
-      <div class="text-card"><h2>Work in Indonesia</h2>
-      <p>Open unemployment was <strong>4.8%</strong> in February 2025 (BPS labour-force survey), down from 4.9% a year earlier. The labour-force participation rate is about 68%.</p>
-      <p>Agriculture still employs roughly a quarter of workers, even though it makes only 12.6% of GDP — the productivity gap that drives the move to cities and factories.</p>
-      <p>Poverty fell to <strong>8.5%</strong> in March 2025, from 9.4% in March 2023 — about 24 million people below the national poverty line.</p></div>
-    </section>`;
+export function pricesPage(state) {
+  const years = YEARS.map(String);
+  return `<h1>Prices &amp; work</h1>
+<p class="lede">Prices and jobs: inflation has stayed low outside the 2022 energy-price spike,
+unemployment fell to 4.85% in August 2025, and poverty is at its lowest on record.</p>
+<div class="card">
+  <h2>Inflation, 2015–2025 (%)</h2>
+  <div class="chart">${barChart(years, INFLATION, { decimals: 2, unit: '%', highlight: yearIndex(state.year) })}</div>
+  <p class="src">Consumer price inflation, year on year (BPS). The 2022 spike to 5.51% followed fuel-subsidy cuts; 2025 is an estimate.</p>
+</div>
+<div class="card">
+  <h2>Unemployment, 2015–2025 (%)</h2>
+  <div class="chart">${lineChart(years, UNEMPLOYMENT, { decimals: 2, unit: '%', highlight: yearIndex(state.year) })}</div>
+  <p class="src">Open unemployment rate, August survey (BPS). It peaked at 7.07% in 2020 and fell to 4.85% in 2025.</p>
+</div>
+<div class="card">
+  <h2>Provincial minimum wage (UMP), 2025</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Province</th><th class="num">Rupiah per month</th></tr></thead>
+    <tbody>
+      ${WAGES_2025.map((w) => `<tr><td>${escape(w.province)}</td><td class="num">Rp ${money(w.wage)}</td></tr>`).join('')}
+    </tbody>
+  </table></div>
+  <p class="src">Provincial government announcements for 2025. Jakarta&rsquo;s minimum wage is more than double Central Java&rsquo;s.</p>
+</div>
+<div class="card">
+  <h2>Work in brief</h2>
+  <ul class="tight">
+    <li>Labour-force participation was 70.6% in August 2024 (BPS).</li>
+    <li>Poverty fell from 11.22% in 2015 to 8.47% in March 2025 (BPS) — the lowest on record.</li>
+    <li>Inflation averaged about 2.7% a year across 2015–2025, inside Bank Indonesia&rsquo;s target band.</li>
+  </ul>
+</div>`;
 }
 
-function sources() {
-  const list = SOURCES.map((s) => `<li><strong>${s.short}</strong> — ${s.full}</li>`).join('');
-  return pageHead(
-    'Sources &amp; methods',
-    'Every figure on this site names its source and year. Nothing here is estimated by us: the numbers are the publishers’ latest releases, rounded for display.',
-    '',
-  )
-  + `<section class="text-card"><h2>Where the numbers come from</h2><ul class="sources">${list}</ul></section>`
-  + `<section class="two-col">
-      <div class="text-card"><h2>How to read this site</h2>
-      <p><strong>Years matter.</strong> Each card and chart names the year its figure refers to — 2025 where the World Bank has published it, 2024 where that is the latest, and 2023 for the detailed industry split.</p>
-      <p><strong>Population has two measures.</strong> The 2020 census counted 270.2 million people; the World Bank series used in the charts runs slightly higher (285.7 million in 2025) because it uses UN estimates. Both are shown and labelled.</p>
-      <p><strong>Money is nominal unless stated.</strong> GDP in US dollars uses the year’s market exchange rate; “real growth” is adjusted for inflation.</p></div>
-      <div class="text-card"><h2>About this site</h2>
-      <p><strong>${COUNTRY.name} in Numbers</strong> is an independent statistics guide built for the make.fun national statistics bounty. It is not affiliated with BPS, the World Bank or the IMF, and it copies no other site’s design, text or images.</p>
-      <p>Capital: ${COUNTRY.capital}. Currency: ${COUNTRY.currency}. Official language: ${COUNTRY.language}. Land area: ${COUNTRY.landAreaKm2.toLocaleString('en-US')} km². Provinces: ${COUNTRY.provinces}.</p>
-      <p>All figures were checked against the sources above in November 2026. The site runs entirely offline — no network requests, no tracking.</p></div>
-    </section>`;
+export function sourcesPage() {
+  return `<h1>Sources</h1>
+<p class="lede">Every figure on this site comes from one of the sources below. Nothing here is
+estimated by this site itself, except where a source&rsquo;s own estimate is marked.</p>
+<div class="card">
+  <h2>Where the numbers come from</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Dataset</th><th>Source</th><th>Notes</th></tr></thead>
+    <tbody>
+      ${SOURCES.map((s) => `<tr><td>${escape(s.dataset)}</td><td>${escape(s.source)}</td><td>${escape(s.note)}</td></tr>`).join('')}
+    </tbody>
+  </table></div>
+</div>
+<div class="card">
+  <h2>How to read this site</h2>
+  <ul class="tight">
+    <li>Figures are rounded to one or two decimals; small differences from other publications come from rounding and revisions.</li>
+    <li>2025 values are estimates or projections where marked, because final releases were not yet out when this site was built.</li>
+    <li>Poverty is the September survey each year, except 2025, which is the March survey.</li>
+    <li>Unemployment is the August survey each year.</li>
+    <li>Provincial populations are BPS mid-year estimates for 2024; the twenty provinces shown cover every island group.</li>
+  </ul>
+</div>`;
 }
 
-const ROUTES = {
-  '/': overview,
-  '/population': population,
-  '/economy': economy,
-  '/regions': regions,
-  '/prices': prices,
-  '/sources': sources,
-};
-
-function currentRoute() {
-  const hash = window.location.hash.replace(/^#/, '') || '/';
-  return ROUTES[hash] ? hash : '/';
-}
-
-export function render(view, scroll = true) {
-  const route = currentRoute();
-  view.innerHTML = ROUTES[route]();
-  document.querySelectorAll('nav a').forEach((a) => {
-    a.classList.toggle('active', a.getAttribute('href') === `#${route}`);
-    if (a.getAttribute('href') === `#${route}`) a.setAttribute('aria-current', 'page');
-    else a.removeAttribute('aria-current');
-  });
-  if (scroll) window.scrollTo(0, 0);
-}
-
-// One delegated listener for every control on every page.
-export function wireControls(view) {
-  view.addEventListener('click', (event) => {
-    const yearBtn = event.target.closest('[data-year]');
-    if (yearBtn) { state.popYear = Number(yearBtn.dataset.year); render(view, false); return; }
-    const modeBtn = event.target.closest('[data-mode]');
-    if (modeBtn) { state.econMode = modeBtn.dataset.mode; render(view, false); return; }
-    const islandBtn = event.target.closest('[data-island]');
-    if (islandBtn) { state.regionIsland = islandBtn.dataset.island; render(view, false); }
-  });
-  view.addEventListener('input', (event) => {
-    if (event.target.id === 'region-search') {
-      state.regionQuery = event.target.value;
-      const pos = event.target.selectionStart;
-      render(view, false);
-      const again = document.getElementById('region-search');
-      if (again) { again.focus(); again.setSelectionRange(pos, pos); }
-    }
-  });
-  view.addEventListener('change', (event) => {
-    if (event.target.id === 'region-sort') { state.regionSort = event.target.value; render(view, false); }
-  });
+export function missingPage() {
+  return `<h1>Not found</h1>
+<p>There is no page at this address. <a href="#/">Back to the overview</a>.</p>`;
 }

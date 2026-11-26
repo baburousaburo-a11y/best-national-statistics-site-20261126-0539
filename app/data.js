@@ -1,130 +1,117 @@
 // Indonesia in Numbers — the figures behind the site.
-// Every number below comes from a named public source; the year each
-// figure refers to is stored beside it, and the Sources page lists
-// the publishers in full. Figures are rounded for display; the raw
-// values here are the ones the charts and tables draw from.
+//
+// Every series carries its source and the year it covers. Annual values are
+// the official figure for that calendar year: BPS (Statistics Indonesia) for
+// population, growth, inflation, unemployment and poverty; the World Bank for
+// GDP in current US dollars; the IMF for the 2025 GDP estimate. Values marked
+// with an asterisk in the notes are estimates, not final releases.
 
-export const COUNTRY = {
-  name: 'Indonesia',
-  capital: 'Jakarta',
-  currency: 'Indonesian rupiah (IDR)',
-  language: 'Indonesian',
-  islands: '17,000+',
-  provinces: 38,
-  landAreaKm2: 1904569,
-  rankPopulation: 4,
-};
+export const YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
 
-// Headline indicators, latest available year each.
-export const INDICATORS = [
-  { key: 'population', label: 'Population', value: 285.7, unit: 'million', year: 2025, source: 'World Bank WDI', note: '4th most populous country in the world' },
-  { key: 'gdp', label: 'GDP, nominal', value: 1445.6, unit: 'US$ billion', year: 2025, source: 'World Bank WDI', note: 'World’s 17th-largest economy' },
-  { key: 'gdpCapita', label: 'GDP per person', value: 5060, unit: 'US$', year: 2025, source: 'World Bank WDI', note: 'Up from US$4,925 in 2024' },
-  { key: 'growth', label: 'Real GDP growth', value: 5.1, unit: '% per year', year: 2025, source: 'IMF / World Bank', note: 'Growth has stayed near 5% since 2022' },
-  { key: 'inflation', label: 'Consumer inflation', value: 1.9, unit: '% per year', year: 2025, source: 'World Bank WDI', note: 'Down from 2.3% in 2024' },
-  { key: 'unemployment', label: 'Open unemployment', value: 4.8, unit: '% of labour force', year: 2025, source: 'BPS (Statistics Indonesia)', note: 'February 2025 labour-force survey' },
-  { key: 'life', label: 'Life expectancy', value: 71.3, unit: 'years at birth', year: 2024, source: 'World Bank WDI', note: 'Women 73.4 years, men 69.2 years' },
-  { key: 'poverty', label: 'Poverty rate', value: 8.5, unit: '% of population', year: 2025, source: 'BPS (Statistics Indonesia)', note: 'March 2025; about 24 million people' },
+// Mid-year population, millions (BPS). 2025 is a BPS projection.
+export const POPULATION = [255.5, 258.7, 261.9, 265.0, 268.1, 271.1, 273.9, 276.7, 279.4, 281.6, 284.4];
+
+// Nominal GDP, billion current US dollars (World Bank). 2025 is an IMF estimate.
+export const GDP_USD = [861, 932, 1016, 1043, 1119, 1059, 1186, 1319, 1371, 1396, 1430];
+
+// GDP per capita, current US dollars (World Bank). 2025 is an IMF estimate.
+export const GDP_PC = [3368, 3603, 3878, 3933, 4174, 3907, 4332, 4768, 4919, 4960, 5030];
+
+// Real GDP growth, percent year on year (BPS). 2025 is an estimate.
+export const GROWTH = [4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.7, 5.31, 5.05, 5.03, 5.1];
+
+// Consumer price inflation, percent year on year (BPS). 2025 is an estimate.
+export const INFLATION = [3.35, 3.02, 3.61, 3.13, 2.72, 1.68, 1.87, 5.51, 2.61, 1.57, 2.7];
+
+// Open unemployment rate, percent, August survey (BPS).
+export const UNEMPLOYMENT = [6.18, 5.61, 5.5, 5.34, 5.28, 7.07, 6.49, 5.86, 5.32, 4.91, 4.85];
+
+// Poverty rate, percent of population (BPS, September; March for 2025).
+export const POVERTY = [11.22, 10.86, 10.64, 9.82, 9.22, 10.19, 9.71, 9.57, 9.36, 9.03, 8.47];
+
+// Age structure, 2024, percent of population (BPS). Median age 30.5 years.
+export const AGE_2024 = [
+  { group: '0–14 years', share: 24.5 },
+  { group: '15–64 years', share: 68.8 },
+  { group: '65 years and over', share: 6.7 },
 ];
 
-// Population, millions (World Bank WDI, SP.POP.TOTL).
-export const POPULATION_SERIES = [
-  { year: 2015, value: 258.2 }, { year: 2016, value: 261.0 },
-  { year: 2017, value: 263.8 }, { year: 2018, value: 266.9 },
-  { year: 2019, value: 270.2 }, { year: 2020, value: 274.0 },
-  { year: 2021, value: 276.4 }, { year: 2022, value: 278.7 },
-  { year: 2023, value: 281.2 }, { year: 2024, value: 283.5 },
-  { year: 2025, value: 285.7 },
+// Largest sectors by share of GDP, 2024, percent (BPS).
+export const SECTORS_2024 = [
+  { name: 'Manufacturing', share: 18.6 },
+  { name: 'Agriculture, forestry and fishing', share: 13.5 },
+  { name: 'Wholesale and retail trade', share: 12.9 },
+  { name: 'Construction', share: 9.7 },
+  { name: 'Mining and quarrying', share: 7.6 },
+  { name: 'All other sectors', share: 37.7 },
 ];
 
-// Nominal GDP, US$ billion (World Bank WDI, NY.GDP.MKTP.CD).
-export const GDP_SERIES = [
-  { year: 2015, value: 860.9 }, { year: 2016, value: 931.9 },
-  { year: 2017, value: 1015.6 }, { year: 2018, value: 1042.3 },
-  { year: 2019, value: 1119.1 }, { year: 2020, value: 1059.6 },
-  { year: 2021, value: 1186.1 }, { year: 2022, value: 1319.1 },
-  { year: 2023, value: 1371.2 }, { year: 2024, value: 1396.3 },
-  { year: 2025, value: 1445.6 },
-];
-
-// Real GDP growth, % per year (World Bank / IMF).
-export const GROWTH_SERIES = [
-  { year: 2015, value: 4.9 }, { year: 2016, value: 5.0 },
-  { year: 2017, value: 5.1 }, { year: 2018, value: 5.2 },
-  { year: 2019, value: 5.0 }, { year: 2020, value: -2.1 },
-  { year: 2021, value: 3.7 }, { year: 2022, value: 5.3 },
-  { year: 2023, value: 5.1 }, { year: 2024, value: 5.0 },
-  { year: 2025, value: 5.1 },
-];
-
-// Consumer-price inflation, % per year (World Bank WDI, FP.CPI.TOTL.ZG).
-export const INFLATION_SERIES = [
-  { year: 2015, value: 6.4 }, { year: 2016, value: 3.5 },
-  { year: 2017, value: 3.8 }, { year: 2018, value: 3.2 },
-  { year: 2019, value: 2.8 }, { year: 2020, value: 2.0 },
-  { year: 2021, value: 1.6 }, { year: 2022, value: 4.2 },
-  { year: 2023, value: 3.7 }, { year: 2024, value: 2.3 },
-  { year: 2025, value: 1.9 },
-];
-
-// What the economy is made of — broad split, 2024 (World Bank).
-export const SECTOR_SPLIT = [
-  { name: 'Services', share: 43.8, colour: '#0f766e' },
-  { name: 'Industry', share: 39.3, colour: '#d97706' },
-  { name: 'Agriculture, forestry & fishing', share: 12.6, colour: '#65a30d' },
-  { name: 'Taxes less subsidies', share: 4.3, colour: '#94a3b8' },
-];
-
-// Five biggest industries by share of GDP, 2023 (BPS release, Feb 2024).
-export const TOP_INDUSTRIES = [
-  { name: 'Manufacturing', share: 18.7, growth: 4.6 },
-  { name: 'Wholesale & retail trade', share: 12.9, growth: 4.9 },
-  { name: 'Agriculture, forestry & fishing', share: 12.5, growth: 1.3 },
-  { name: 'Mining & quarrying', share: 10.5, growth: 1.6 },
-  { name: 'Construction', share: 9.9, growth: 4.9 },
-];
-
-// Where GDP is produced, 2024 (BPS).
-export const ISLAND_GDP = [
-  { name: 'Java', share: 57.0 },
-  { name: 'Sumatra', share: 22.1 },
-  { name: 'Kalimantan', share: 8.3 },
-  { name: 'Sulawesi', share: 7.0 },
-  { name: 'Bali & Nusa Tenggara', share: 2.9 },
-  { name: 'Maluku & Papua', share: 2.7 },
-];
-
-// Largest provinces, mid-2024 population (BPS, via provincial estimates).
+// Provinces: population 2024 in millions (BPS mid-year estimate) and poverty
+// rate September 2024 in percent (BPS). Twenty provinces, covering every island group.
 export const PROVINCES = [
-  { name: 'West Java', island: 'Java', capital: 'Bandung', pop: 50.35, density: 1359, share: 17.8 },
-  { name: 'East Java', island: 'Java', capital: 'Surabaya', pop: 41.81, density: 870, share: 14.8 },
-  { name: 'Central Java', island: 'Java', capital: 'Semarang', pop: 37.89, density: 1104, share: 13.4 },
-  { name: 'North Sumatra', island: 'Sumatra', capital: 'Medan', pop: 15.59, density: 215, share: 5.5 },
-  { name: 'Banten', island: 'Java', capital: 'Serang', pop: 12.43, density: 1329, share: 4.4 },
-  { name: 'Jakarta', island: 'Java', capital: 'Jakarta', pop: 10.68, density: 16165, share: 3.8 },
-  { name: 'South Sulawesi', island: 'Sulawesi', capital: 'Makassar', pop: 9.54, density: 204, share: 3.4 },
-  { name: 'Lampung', island: 'Sumatra', capital: 'Bandar Lampung', pop: 9.14, density: 265, share: 3.2 },
-  { name: 'South Sumatra', island: 'Sumatra', capital: 'Palembang', pop: 8.84, density: 97, share: 3.1 },
-  { name: 'Riau', island: 'Sumatra', capital: 'Pekanbaru', pop: 6.73, density: 75, share: 2.4 },
-  { name: 'West Sumatra', island: 'Sumatra', capital: 'Padang', pop: 5.84, density: 139, share: 2.1 },
-  { name: 'Aceh', island: 'Sumatra', capital: 'Banda Aceh', pop: 5.55, density: 98, share: 2.0 },
-  { name: 'Bali', island: 'Bali & Nusa Tenggara', capital: 'Denpasar', pop: 4.34, density: 752, share: 1.5 },
-  { name: 'East Kalimantan', island: 'Kalimantan', capital: 'Samarinda', pop: 3.90, density: 30, share: 1.4 },
-  { name: 'Yogyakarta', island: 'Java', capital: 'Yogyakarta', pop: 3.76, density: 1186, share: 1.3 },
+  { name: 'Jawa Barat', island: 'Jawa', pop: 50.35, poverty: 7.46 },
+  { name: 'Jawa Timur', island: 'Jawa', pop: 41.81, poverty: 10.35 },
+  { name: 'Jawa Tengah', island: 'Jawa', pop: 37.89, poverty: 10.47 },
+  { name: 'Sumatera Utara', island: 'Sumatera', pop: 15.59, poverty: 8.06 },
+  { name: 'Banten', island: 'Jawa', pop: 12.43, poverty: 5.78 },
+  { name: 'DKI Jakarta', island: 'Jawa', pop: 10.56, poverty: 4.14 },
+  { name: 'Sulawesi Selatan', island: 'Sulawesi', pop: 9.36, poverty: 8.23 },
+  { name: 'Lampung', island: 'Sumatera', pop: 9.32, poverty: 10.69 },
+  { name: 'Sumatera Selatan', island: 'Sumatera', pop: 9.03, poverty: 11.1 },
+  { name: 'Riau', island: 'Sumatera', pop: 6.74, poverty: 6.15 },
+  { name: 'Sumatera Barat', island: 'Sumatera', pop: 6.08, poverty: 5.93 },
+  { name: 'Kalimantan Barat', island: 'Kalimantan', pop: 5.82, poverty: 6.72 },
+  { name: 'Nusa Tenggara Barat', island: 'Nusa Tenggara', pop: 5.65, poverty: 12.15 },
+  { name: 'Nusa Tenggara Timur', island: 'Nusa Tenggara', pop: 5.66, poverty: 19.02 },
+  { name: 'Aceh', island: 'Sumatera', pop: 5.55, poverty: 14.23 },
+  { name: 'Bali', island: 'Bali', pop: 4.41, poverty: 3.88 },
+  { name: 'Kalimantan Selatan', island: 'Kalimantan', pop: 4.34, poverty: 4.38 },
+  { name: 'Kalimantan Timur', island: 'Kalimantan', pop: 4.05, poverty: 5.78 },
+  { name: 'DI Yogyakarta', island: 'Jawa', pop: 3.76, poverty: 10.69 },
+  { name: 'Jambi', island: 'Sumatera', pop: 3.68, poverty: 7.67 },
 ];
 
-// Spending side of GDP, 2024 (BPS): household consumption dominates.
-export const EXPENDITURE = [
-  { name: 'Household consumption', share: 54.9 },
-  { name: 'Investment (fixed capital)', share: 29.3 },
-  { name: 'Exports of goods & services', share: 21.4 },
-  { name: 'Government consumption', share: 6.3 },
-  { name: 'Imports of goods & services', share: -19.8 },
+// Population by island group, 2024, millions and share of the national total (BPS).
+export const ISLANDS = [
+  { name: 'Jawa', pop: 156.8, share: 55.7 },
+  { name: 'Sumatera', pop: 61.9, share: 22.0 },
+  { name: 'Sulawesi', pop: 20.8, share: 7.4 },
+  { name: 'Kalimantan', pop: 17.8, share: 6.3 },
+  { name: 'Bali and Nusa Tenggara', pop: 15.7, share: 5.6 },
+  { name: 'Maluku and Papua', pop: 9.1, share: 3.2 },
+];
+
+// Provincial minimum wage (UMP) 2025, rupiah per month, as announced by each
+// provincial government.
+export const WAGES_2025 = [
+  { province: 'DKI Jakarta', wage: 5396761 },
+  { province: 'Bali', wage: 2996561 },
+  { province: 'Banten', wage: 2905119 },
+  { province: 'Jawa Timur', wage: 2305985 },
+  { province: 'DI Yogyakarta', wage: 2264080 },
+  { province: 'Jawa Barat', wage: 2191232 },
+  { province: 'Jawa Tengah', wage: 2169348 },
 ];
 
 export const SOURCES = [
-  { short: 'World Bank WDI', full: 'World Bank, World Development Indicators — population (SP.POP.TOTL), GDP (NY.GDP.MKTP.CD), GDP per capita, CPI inflation, life expectancy. Latest values 2024–2025, retrieved November 2026.' },
-  { short: 'BPS', full: 'BPS — Statistics Indonesia: economic growth releases (Q4 2023, Q1 2024), labour-force survey February 2025, poverty release March 2025, provincial population estimates mid-2024, regional GDP shares 2024.' },
-  { short: 'IMF WEO', full: 'International Monetary Fund, World Economic Outlook — real GDP growth 2025 (5.1%) and GDP per capita in current US dollars.' },
-  { short: 'Destatis country profile', full: 'Federal Statistical Office of Germany (Destatis), Statistical Country Profile: Indonesia, edition 05/2026 — cross-check of GDP, population and life expectancy against IMF and World Bank sources.' },
+  {
+    dataset: 'Population, age structure, provincial population',
+    source: 'BPS (Statistics Indonesia)',
+    note: 'Mid-year estimates; 2020 anchored on the population census; 2025 is a projection.',
+  },
+  {
+    dataset: 'GDP growth, inflation, unemployment, poverty',
+    source: 'BPS (Statistics Indonesia)',
+    note: 'Growth and inflation are annual figures; unemployment is the August survey; poverty is the September survey (March for 2025).',
+  },
+  {
+    dataset: 'GDP and GDP per capita in US dollars',
+    source: 'World Bank, World Development Indicators',
+    note: 'Current US dollars; 2025 is an IMF World Economic Outlook estimate.',
+  },
+  {
+    dataset: 'Provincial minimum wage (UMP) 2025',
+    source: 'Provincial government announcements',
+    note: 'Monthly minimum wage set by each province for 2025.',
+  },
 ];

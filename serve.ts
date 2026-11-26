@@ -1,7 +1,6 @@
-// A tiny static server for local testing only: `node serve.ts` serves
-// app/ at http://localhost:8080 (`--port <n>` for another port). It
-// answers with the MIME type a browser needs and refuses any path
-// that escapes app/.
+// Tiny static server for app/ while developing (Node 22, standard library
+// only). Serves app/ on http://localhost:8080, or another port with
+// `node serve.ts --port <n>`. Development convenience, not a public server.
 
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('./app', import.meta.url)));
 const args = process.argv.slice(2);
-const portArg = args.indexOf('--port');
-const wanted = portArg === -1 ? 8080 : Number(args[portArg + 1]);
+const portIndex = args.indexOf('--port');
+const wanted = portIndex === -1 ? 8080 : Number(args[portIndex + 1]);
 const port = Number.isInteger(wanted) && wanted > 0 && wanted < 65536 ? wanted : 8080;
 
 const MIME = {
